@@ -14,36 +14,29 @@
 
 <script src="PaintGrafics.js"></script>
 
-<div> 
-	<div id="tx0" style="width:400;height:380;border-bottom:2 solid black;"></div>
-	<select id="op0" style="width:400;height:20;" onChange="ChangeScheme(tx0, op0);">
-		<option>Jet</option>
-		<option>HSV</option>
-		<option>Gray</option>
-	</select>
-</div>
+<div id="tx1"></div>
 
 <H1> bla - bla - bla </H1>
 
-<div> 
-	<div id="tx1" style="width:300;height:280;border-bottom:2 solid black;"></div>
-	<select id="op1" style="width:300;height:20;" onChange="ChangeScheme(tx1, op1);">
-		<option>Jet</option>
-		<option>HSV</option>
-		<option>Gray</option>
-	</select>
-</div>
+<div id="tx2"></div>
 
 <H1> bla - bla - bla </H1>
 
-<div id="tx"> 
-	
-</div>
+<div id="tx3"></div>
 
 
 <script>
 
-ReadJSON(txxxxx,ooooo,"a.json");
+var SchedulesSettings =
+{
+	width:'400',
+	height:'400',
+	renderId:'tx2',
+	urlJSONdata:'a.json',
+	
+};
+
+var temp = new SCHEDULE.Chart(SchedulesSettings);
 
 </script>
 
