@@ -10,6 +10,34 @@ function SCHEDULE(s)
 	this.height = s.height;
 	this.renderID = s.renderID;
 	this.URLJSON = s.URLJSON;
+	this.container = 0; 
+	this.scene = 0;
+	this.camera = 0;
+	this.renderer = 0;
+	this.controls = 0;
+	this.keyboard = new THREEx.KeyboardState();
+	this.meshFunction = 0;
+	this.wireMaterial = 0;
+	this.json = 0;
+	this.graphGeometry = 0;
+	this.graphMesh= 0;
+	
+	this.ReadJSON = function()
+	{
+		$.getJSON( this.URLJSON, 
+			function(json)
+			{
+				this.json = json;
+			}
+		);
+	};
+	
+	this.CreateSchedule = function()
+	{
+		
+	
+	};
+	
 };
 
 function ReadJSON(_tx,_op,site)
