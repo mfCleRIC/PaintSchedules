@@ -29,14 +29,18 @@
 
 var SchedulesSettings =
 {
-	width:'400',
-	height:'400',
-	renderID:'tx2',
-	URLJSON:'a.json',
-};
+	width:400,
+	height:400,
+	renderID:tx2,
+	URLJSON:"a.json",
+	ColorScheme:"Jet",
+	nameVariable:"zzz"
+}
 
-var temp = new SCHEDULE(SchedulesSettings);
-temp1.ReadJSON();
+var zzz = new SCHEDULE(SchedulesSettings);
+zzz.Normalize(10);
+zzz.Render();
+
 </script>
 
 </body>
