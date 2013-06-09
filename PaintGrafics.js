@@ -31,6 +31,11 @@ function SCHEDULE(s)
 	var graphMesh = 0;
 	var initGUI = false;
 	var BoundingBoxx = 0;
+	var cube = 0;
+	var renderSTART = false;
+	var zMin,zMax;
+	var _WIREFRAME = false;
+	var median = 0;
 	
 	this.ReadJSON = function()
 	{		
@@ -71,20 +76,12 @@ function SCHEDULE(s)
 		
 		controls = new THREE.TrackballControls( camera, renderer.domElement );			
 		
-		scene.add(new THREE.AxisHelper(1000));
-		//var wireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x000088, wireframe: true, side:THREE.DoubleSide } ); 
-		//var floorGeometry = new THREE.PlaneGeometry(1000,1000,10,10);
-		//var floor = new THREE.Mesh(floorGeometry, wireframeMaterial);
-		//floor.position.z = -0.01;
-		//scene.add(floor);
-				
-		var normMaterial = new THREE.MeshNormalMaterial;
-		var shadeMaterial = new THREE.MeshLambertMaterial( { color: 0xff0000 } );
+		//scene.add(new THREE.AxisHelper(1000));
 				
 		var wireTexture = new THREE.ImageUtils.loadTexture( 'images/square.png' );
 		wireTexture.wrapS = wireTexture.wrapT = THREE.RepeatWrapping; 
 		wireTexture.repeat.set( 40, 40 );
-		wireMaterial = new THREE.MeshBasicMaterial( { map: wireTexture, vertexColors: THREE.VertexColors, side:THREE.DoubleSide } );
+		wireMaterial = new THREE.MeshBasicMaterial( { map: wireTexture, vertexColors: THREE.VertexColors, side:THREE.DoubleSide,wireframe:false } );
 		renderer.setClearColorHex( 0x888888, 1 );
 		//alert("END INIT");
 	};
@@ -94,8 +91,8 @@ function SCHEDULE(s)
 		//alert("START SCHEDULE");
 		if (json == 0)
 			this.ReadJSON();
-		var zMin = json.mas[0][0];
-		var zMax = json.mas[0][0];
+		zMin = json.mas[0][0];
+		zMax = json.mas[0][0];
 		var n = json.n - 1;
 		var m = json.m - 1;
 		for(var i = 0;i <= n;i++)
@@ -150,15 +147,10 @@ function SCHEDULE(s)
 		}
 		
 		wireMaterial.map.repeat.set( n , m );
-		//if (graphMesh)
-		//{
-		//	scene.remove(graphMesh);
-		//}
-		//else
-		//{
-			camera.position.set( n, m, 2 * zMax);
-			camera.up = new THREE.Vector3( 0, 0, 1 );
-		//}
+		
+		camera.position.set( n, m, 2 * zMax);
+		camera.up = new THREE.Vector3( 0, 0, 1 );
+		_WIREFRAME = false;
 		graphMesh = new THREE.Mesh( graphGeometry,wireMaterial );
 		scene.add(graphMesh);	
 		graphMesh.position.set( - (n / 2), -( m / 2), - (zRange / 2 ));
@@ -182,6 +174,7 @@ function SCHEDULE(s)
 		if (graphMesh == 0)
 			this.CreateSchedule();
 		Animate();
+		renderSTART = true;
 		//alert("END RENDER");
 	};
 	
@@ -211,10 +204,106 @@ function SCHEDULE(s)
 	this.ChangeColorScheme = function()
 	{
 		this.ColorScheme = document.getElementById(this.renderID.id + "ColorList").value;
-		this.CreateSchedule();
+		
+		var zRange = zMax - zMin;
+		var color, point, face, numberOfSides, vertexIndex;
+		var faceIndices = [ 'a', 'b', 'c', 'd' ];
+		
+		for ( var i = 0; i < graphGeometry.vertices.length; i++ ) 
+		{
+			point = graphGeometry.vertices[ i ];
+			var temp = (zMax - point.z) / zRange;
+			var ii = Math.round(temp * 100);
+			ii = Math.min(ii,99);
+			ii = Math.max(ii,0);
+			color = new THREE.Color(ClrShm[this.ColorScheme][ii]);
+			graphGeometry.colors[i] = color; 
+		}
+
+		for ( var i = 0; i < graphGeometry.faces.length; i++ ) 
+		{
+			face = graphGeometry.faces[ i ];
+			numberOfSides = ( face instanceof THREE.Face3 ) ? 3 : 4;
+			for( var j = 0; j < numberOfSides; j++ ) 
+			{
+				vertexIndex = face[ faceIndices[ j ] ];
+				face.vertexColors[ j ] = graphGeometry.colors[ vertexIndex ];
+			}
+		}
+		
+		_WIREFRAME = false;
+		scene.remove(graphMesh);
+		graphMesh = new THREE.Mesh( graphGeometry.clone(), wireMaterial );
+		scene.add(graphMesh);
+		
+		graphMesh.position.set( - ((json.n-1) / 2), -( (json.m-1) / 2), - (zRange / 2 ));
 	};
 	
+	this.Cube = function()
+	{	
+		if ( cube )
+		{
+			scene.remove(cube);
+			cube = 0;
+			exit();
+		}
+		var cubeGeometry = new THREE.CubeGeometry( json.n - 1, json.m - 1, zMax-zMin,3, 3, 3);
+		var wireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x0b0b0c, wireframe: true, transparent: false } ); 
+		cube = new THREE.Mesh( cubeGeometry, wireframeMaterial );
+		cube.position.z = 0.01;
+		scene.add(cube);
+	}
 	
+	this.WireFrame = function()
+	{
+		if (_WIREFRAME == false)
+		{
+			graphMesh.material = new THREE.MeshBasicMaterial( { color:0xffffff,wireframe: true} );
+			_WIREFRAME = true;
+			exit();
+		}
+		_WIREFRAME = false;
+		graphMesh.material = wireMaterial;
+	};
+	
+	this.CameraToUp = function()
+	{
+		camera.position.set(0,0,2 * (zMax - zMin));
+		camera.up = new THREE.Vector3( -1, 0, 0 );
+	};
+	
+	this.CameraToDown = function()
+	{
+		camera.position.set(0,0,-2 * (zMax - zMin));
+		camera.up = new THREE.Vector3( -1, 0, 0 );
+	};
+	
+	this.CameraToPerspect = function()
+	{
+		camera.position.set( 0, 1.5 * json.m , 1.5 * (zMax-zMin));
+		camera.up = new THREE.Vector3( 0, 0, 1 );
+	};
+	
+	this.Median = function()
+	{
+		if (median)
+		{
+			scene.remove(median);
+			median = 0;
+			exit();
+		}
+		var wireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x000088, side:THREE.DoubleSide ,transparent:true} ); 
+		var medianGeometry = new THREE.PlaneGeometry(json.n + 5,json.m + 5,10,10);
+		wireframeMaterial.opacity = 0.2;
+		median = new THREE.Mesh(medianGeometry, wireframeMaterial);
+		median.position.z = -0.01;
+		scene.add(median);
+	};
+	
+	this.sigma2 = function()
+	{
+		alert("I don't know how realize this function :(");
+	};
 	
 	this.CreateGUI = function()
 	{
@@ -222,7 +311,14 @@ function SCHEDULE(s)
 		this.renderID.innerHTML = this.renderID.innerHTML + 
 			'<div id="' + this.renderID.id + 'Renderer"></div>' +
 			'<select id="' + this.renderID.id + 'ColorList" style="width:' + this.width + ';height:20;" onChange="' + this.nameVariable + '.ChangeColorScheme();">' +
-			'<option>Jet</option><option>HSV</option><option>Gray</option></select>';
+			'<option>Jet</option><option>HSV</option><option>Gray</option></select><br>' +
+			'<input type="button" style ="width:' + this.width / 3 + ';height:25;" onClick="' + this.nameVariable + '.CameraToUp();" value="View Up"/>'+
+			'<input type="button" style ="width:' + this.width / 3 + ';height:25;" onClick="' + this.nameVariable + '.CameraToDown();" value="View Down"/>'+
+			'<input type="button" style ="width:' + this.width / 3 + ';height:25;" onClick="' + this.nameVariable + '.CameraToPerspect();" value="View Perspect"/><br>'+
+			'<input type="button" style ="width:' + this.width / 4 + ';height:25;" onClick="' + this.nameVariable + '.Cube();" value="Cube"/>'+
+			'<input type="button" style ="width:' + this.width / 4 + ';height:25;" onClick="' + this.nameVariable + '.WireFrame();" value="WireFrame"/>'+
+			'<input type="button" style ="width:' + this.width / 4 + ';height:25;" onClick="' + this.nameVariable + '.Median();" value="Median"/>'+
+			'<input type="button" style ="width:' + this.width / 4 + ';height:25;" onClick="' + this.nameVariable + '.sigma2();" value="2sigma"/>';
 	};
 	
 };
